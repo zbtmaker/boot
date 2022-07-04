@@ -1,0 +1,8 @@
+/Users/zoubaitao/Programming/java/zbtmaker-boot/zbtmaker-boot-mq/src/main/java/zbtmaker/boot/mq/kafka/resolver/KafkaConfigResolver.java
+/Users/zoubaitao/Programming/java/zbtmaker-boot/zbtmaker-boot-mq/src/main/java/zbtmaker/boot/mq/kafka/annotation/EnableAutoKafkaConfig.java
+/Users/zoubaitao/Programming/java/zbtmaker-boot/zbtmaker-boot-mq/src/main/java/zbtmaker/boot/mq/kafka/config/KafkaProducerConfig.java
+/Users/zoubaitao/Programming/java/zbtmaker-boot/zbtmaker-boot-mq/src/main/java/zbtmaker/boot/mq/kafka/resolver/AutoKafkaBaseResolver.java
+/Users/zoubaitao/Programming/java/zbtmaker-boot/zbtmaker-boot-mq/src/main/java/zbtmaker/boot/mq/kafka/config/KafkaCommonConfig.java
+/Users/zoubaitao/Programming/java/zbtmaker-boot/zbtmaker-boot-mq/src/main/java/zbtmaker/boot/mq/kafka/config/KafkaConsumerConfig.java
+/Users/zoubaitao/Programming/java/zbtmaker-boot/zbtmaker-boot-mq/src/main/java/zbtmaker/boot/mq/kafka/annotation/AutoKafkaConfiguration.java
+/Users/zoubaitao/Programming/java/zbtmaker-boot/zbtmaker-boot-mq/src/main/java/zbtmaker/boot/mq/kafka/annotation/AutoKafkaRegistrar.java
