@@ -7,6 +7,6 @@
 # Editor-based HTTP Client requests
 /httpRequests/
 # Target
-target/
+.class
+/target/
 .idea/
-
