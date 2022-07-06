@@ -5,8 +5,6 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.config.SaslConfigs;
 import zbtmaker.boot.mq.kafka.config.KafkaCommonConfig;
-import zbtmaker.boot.mq.kafka.config.KafkaConsumerConfig;
-import zbtmaker.boot.mq.kafka.config.KafkaProducerConfig;
 
 import java.util.HashMap;
 import java.util.Map;

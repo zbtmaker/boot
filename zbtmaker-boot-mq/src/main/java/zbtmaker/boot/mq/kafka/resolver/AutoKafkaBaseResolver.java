@@ -1,12 +1,19 @@
 package zbtmaker.boot.mq.kafka.resolver;
 
-import org.apache.commons.lang3.StringUtils;
-import zbtmaker.boot.common.constant.StringConstants;
-import zbtmaker.boot.mq.kafka.config.KafkaConsumerConfig;
-import zbtmaker.boot.mq.kafka.config.KafkaProducerConfig;
+import org.apache.commons.collections4.MapUtils;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.cache.support.SimpleCacheManager;
+import org.springframework.core.env.AbstractEnvironment;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.PropertySource;
+import zbtmaker.boot.mq.kafka.config.KafkaCommonConfig;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author zoubaitao
@@ -14,66 +21,87 @@ import java.util.List;
  */
 public class AutoKafkaBaseResolver {
 
+    private final static String KAFKA_PRODUCER_PREFIX = "kafka.producer";
+    private final static String KAFKA_CONSUMER_PREFIX = "kafka.consumer";
     /**
      * 生产者配置
      */
-    private static final List<KafkaProducerConfig> PRODUCER_CONFIGS = new ArrayList<>();
+    private static List<KafkaCommonConfig> PRODUCER_CONFIGS;
 
     /**
      * 消费者配置
      */
-    private static final List<KafkaConsumerConfig> CONSUMER_CONFIGS = new ArrayList<>();
+    private static List<KafkaCommonConfig> CONSUMER_CONFIGS;
 
-    /**
-     * 初始化消费者和生产者配置
-     */
-    public static void init() {
-        initConsumerConfigs();
-        initProducerConfigs();
+    public static void caffeineCacheManager(Environment environment) {
+        Map<String, KafkaCommonConfig> producerClusterNameMapConfig = new HashMap<>();
+        Map<String, KafkaCommonConfig> consumerClusterNameMapConfig = new HashMap<>();
+        AbstractEnvironment abstractEnvironment = (AbstractEnvironment) environment;
+        for (PropertySource<?> source : abstractEnvironment.getPropertySources()) {
+            Object o = source.getSource();
+            if (o instanceof Map) {
+                for (Map.Entry<String, Object> entry : (((Map<String, Object>) o).entrySet())) {
+                    String key = entry.getKey();
+                    if (key.startsWith(KAFKA_CONSUMER_PREFIX)) {
+                        String keySuffix = key.substring(KAFKA_CONSUMER_PREFIX.length() + 1);
+                        parseKey(keySuffix, entry.getValue().toString(), consumerClusterNameMapConfig);
+                    } else if (key.startsWith(KAFKA_PRODUCER_PREFIX)) {
+                        String keySuffix = key.substring(KAFKA_PRODUCER_PREFIX.length() + 1);
+                        parseKey(keySuffix, entry.getValue().toString(), producerClusterNameMapConfig);
+                    }
+                }
+            }
+        }
+        // 设置生产者默认序列化方式
+        if (MapUtils.isNotEmpty(producerClusterNameMapConfig)) {
+            PRODUCER_CONFIGS = new ArrayList<>(producerClusterNameMapConfig.values());
+            for (KafkaCommonConfig commonConfig : PRODUCER_CONFIGS) {
+                Map<String, Object> properties = commonConfig.getProperties();
+                if (!properties.containsKey(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG)) {
+                    properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, org.apache.kafka.common.serialization.StringSerializer.class);
+                }
+                if (!properties.containsKey(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG)) {
+                    properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, org.apache.kafka.common.serialization.StringSerializer.class);
+                }
+            }
+        }
+        // 设置默认反序列化方式
+        if (MapUtils.isNotEmpty(consumerClusterNameMapConfig)) {
+            CONSUMER_CONFIGS = new ArrayList<>(consumerClusterNameMapConfig.values());
+            for (KafkaCommonConfig commonConfig : CONSUMER_CONFIGS) {
+                Map<String, Object> properties = commonConfig.getProperties();
+                if (!properties.containsKey(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG)) {
+                    properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, org.apache.kafka.common.serialization.StringDeserializer.class);
+                }
+                if (!properties.containsKey(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG)) {
+                    properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, org.apache.kafka.common.serialization.StringDeserializer.class);
+                }
+            }
+        }
+
     }
 
-    /**
-     * 初始化生产者配置
-     */
-    private static void initProducerConfigs() {
-        String producerClusterNames = "moli,xiangrikui";
-        if (StringUtils.isBlank(producerClusterNames)) {
+    private static void parseKey(String keySuffix, String value, Map<String, KafkaCommonConfig> clusterNameMapConfig) {
+        int index = keySuffix.indexOf(".");
+        if (index == -1) {
             return;
         }
-        String[] clusterNames = producerClusterNames.split(StringConstants.DOT);
-        if (clusterNames.length == 0) {
-            return;
+        String clusterName = keySuffix.substring(0, index);
+        KafkaCommonConfig commonConfig = clusterNameMapConfig.get(clusterName);
+        if (commonConfig == null) {
+            commonConfig = new KafkaCommonConfig();
+            commonConfig.setClusterName(clusterName);
+            commonConfig.setProperties(new HashMap<>());
+            clusterNameMapConfig.put(clusterName, commonConfig);
         }
-
-        for (String clusterName : clusterNames) {
-            KafkaProducerConfig producerConfig = KafkaConfigResolver.createProducerConfig(clusterName);
-            PRODUCER_CONFIGS.add(producerConfig);
-        }
+        commonConfig.getProperties().put(keySuffix.substring(index + 1), value);
     }
 
-    /**
-     * 初始化消费者配置
-     */
-    private static void initConsumerConfigs() {
-        String consumerClusterNames = "moli,xiangrikui";
-        if (StringUtils.isBlank(consumerClusterNames)) {
-            return;
-        }
-        String[] clusterNames = consumerClusterNames.split(StringConstants.DOT);
-        if (clusterNames.length == 0) {
-            return;
-        }
-        for (String clusterName : clusterNames) {
-            KafkaConsumerConfig consumerConfig = KafkaConfigResolver.createConsumerConfig(clusterName);
-            CONSUMER_CONFIGS.add(consumerConfig);
-        }
-    }
-
-    public static List<KafkaProducerConfig> getProducerConfigs() {
+    public static List<KafkaCommonConfig> getProducerConfigs() {
         return PRODUCER_CONFIGS;
     }
 
-    public static List<KafkaConsumerConfig> getConsumerConfigs() {
+    public static List<KafkaCommonConfig> getConsumerConfigs() {
         return CONSUMER_CONFIGS;
     }
 }

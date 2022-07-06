@@ -15,6 +15,7 @@
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
         <spring-boot.version>2.7.1</spring-boot.version>
+        <comms-collections.version>4.4</comms-collections.version>
     </properties>
 
     <dependencyManagement>
@@ -43,6 +44,12 @@
                 <version>${spring-boot.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-collections4</artifactId>
+                <version>${comms-collections.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
