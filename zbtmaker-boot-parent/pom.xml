@@ -16,6 +16,7 @@
         <maven.compiler.target>8</maven.compiler.target>
         <spring-boot.version>2.7.1</spring-boot.version>
         <comms-collections.version>4.4</comms-collections.version>
+        <guava.version>10.0.1</guava.version>
     </properties>
 
     <dependencyManagement>
@@ -50,6 +51,12 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-collections4</artifactId>
                 <version>${comms-collections.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${guava.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

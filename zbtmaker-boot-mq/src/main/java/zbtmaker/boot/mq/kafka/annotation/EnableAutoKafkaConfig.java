@@ -11,6 +11,6 @@ import java.lang.annotation.*;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@Import({AutoKafkaConfiguration.class})
+@Import({AutoKafkaRegistrar.class, AutoKafkaConfiguration.class})
 public @interface EnableAutoKafkaConfig {
 }
