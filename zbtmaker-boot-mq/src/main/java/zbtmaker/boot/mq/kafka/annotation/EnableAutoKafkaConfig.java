@@ -1,5 +1,6 @@
 package zbtmaker.boot.mq.kafka.annotation;
 
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Import;
 
 import java.lang.annotation.*;

@@ -10,6 +10,7 @@ import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
 import org.springframework.core.env.Environment;
 import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
+import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.util.CollectionUtils;
@@ -34,7 +35,7 @@ public class AutoKafkaRegistrar implements ImportBeanDefinitionRegistrar, Enviro
 
     @Override
     public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
-        AutoKafkaBaseResolver.caffeineCacheManager(environment);
+        AutoKafkaBaseResolver.parseClusterConfigs(environment);
         List<KafkaCommonConfig> producerConfigs = AutoKafkaBaseResolver.getProducerConfigs();
         if (!CollectionUtils.isEmpty(producerConfigs)) {
             for (KafkaCommonConfig producerConfig : producerConfigs) {
@@ -52,7 +53,7 @@ public class AutoKafkaRegistrar implements ImportBeanDefinitionRegistrar, Enviro
 
     private void registerKafkaTemplate(KafkaCommonConfig producerConfig, BeanDefinitionRegistry registry) {
         GenericBeanDefinition beanDefinition = new GenericBeanDefinition();
-        beanDefinition.setParentName(KafkaTemplate.class.getName());
+        beanDefinition.setBeanClass(KafkaTemplate.class);
         ConstructorArgumentValues cav = beanDefinition.getConstructorArgumentValues();
         cav.addIndexedArgumentValue(0, new DefaultKafkaProducerFactory<>(producerConfig.getProperties()));
         String beanName = "kafkaTemplate#" + producerConfig.getClusterName();
@@ -61,9 +62,9 @@ public class AutoKafkaRegistrar implements ImportBeanDefinitionRegistrar, Enviro
 
     private void registerContainerFactory(KafkaCommonConfig consumerConfig, BeanDefinitionRegistry registry) {
         GenericBeanDefinition beanDefinition = new GenericBeanDefinition();
-        beanDefinition.setParentName(ConcurrentKafkaListenerContainerFactory.class.getName());
+        beanDefinition.setBeanClass(ConcurrentKafkaListenerContainerFactory.class);
         MutablePropertyValues mpv = beanDefinition.getPropertyValues();
-        mpv.addPropertyValue("consumerFactory", new DefaultKafkaProducerFactory<>(consumerConfig.getProperties()));
+        mpv.addPropertyValue("consumerFactory", new DefaultKafkaConsumerFactory<>(consumerConfig.getProperties()));
         Boolean batchListener = Objects.isNull(consumerConfig.getProperties().get("batch.listener"))
                 ? Boolean.FALSE
                 : Boolean.parseBoolean(consumerConfig.getProperties().get("batch.listener").toString());

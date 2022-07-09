@@ -1,13 +1,11 @@
 package zbtmaker.boot.mq.kafka.resolver;
 
-import org.apache.commons.collections4.MapUtils;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.common.serialization.StringSerializer;
-import org.springframework.cache.support.SimpleCacheManager;
 import org.springframework.core.env.AbstractEnvironment;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.PropertySource;
+import zbtmaker.boot.common.util.MapUtils;
 import zbtmaker.boot.mq.kafka.config.KafkaCommonConfig;
 
 import java.util.ArrayList;
@@ -33,7 +31,7 @@ public class AutoKafkaBaseResolver {
      */
     private static List<KafkaCommonConfig> CONSUMER_CONFIGS;
 
-    public static void caffeineCacheManager(Environment environment) {
+    public static void parseClusterConfigs(Environment environment) {
         Map<String, KafkaCommonConfig> producerClusterNameMapConfig = new HashMap<>();
         Map<String, KafkaCommonConfig> consumerClusterNameMapConfig = new HashMap<>();
         AbstractEnvironment abstractEnvironment = (AbstractEnvironment) environment;
