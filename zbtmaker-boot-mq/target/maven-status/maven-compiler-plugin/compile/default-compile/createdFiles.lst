@@ -1,5 +1,0 @@
-zbtmaker/boot/mq/kafka/config/KafkaCommonConfig.class
-zbtmaker/boot/mq/kafka/resolver/AutoKafkaBaseResolver.class
-zbtmaker/boot/mq/kafka/annotation/AutoKafkaConfiguration.class
-zbtmaker/boot/mq/kafka/annotation/AutoKafkaRegistrar.class
-zbtmaker/boot/mq/kafka/annotation/EnableAutoKafkaConfig.class

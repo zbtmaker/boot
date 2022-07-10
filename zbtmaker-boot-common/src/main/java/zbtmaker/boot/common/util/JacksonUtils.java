@@ -16,10 +16,10 @@ import java.util.Set;
  * @author zoubaitao
  * date 2022/02/26
  */
-public class JacksonUtil {
+public class JacksonUtils {
     private final static ObjectMapper MAPPER = new ObjectMapper();
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(JacksonUtil.class);
+    private final static Logger LOGGER = LoggerFactory.getLogger(JacksonUtils.class);
 
     public static String toString(Object object) {
         if (object == null) {

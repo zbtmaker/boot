@@ -8,7 +8,7 @@ import org.springframework.cache.support.SimpleCacheManager;
 import org.springframework.core.env.AbstractEnvironment;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.PropertySource;
-import zbtmaker.boot.common.util.JacksonUtil;
+import zbtmaker.boot.common.util.JacksonUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -37,7 +37,7 @@ public class CacheResolver {
                     String key = entry.getKey();
                     if (key.startsWith(CACHE_PREFIX)) {
                         String cacheName = key.substring(CACHE_PREFIX.length());
-                        CacheConfig cacheConfig = JacksonUtil.parseObject(entry.getValue().toString(), CacheConfig.class);
+                        CacheConfig cacheConfig = JacksonUtils.parseObject(entry.getValue().toString(), CacheConfig.class);
                         if (cacheConfig == null) {
                             continue;
                         }
