@@ -13,6 +13,7 @@
         <module>zbtmaker-boot-cache</module>
         <module>zbtmaker-boot-parent</module>
         <module>zbtmaker-boot-common</module>
+        <module>zbtmaker-boot-thread</module>
     </modules>
 
     <properties>
