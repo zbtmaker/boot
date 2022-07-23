@@ -1,6 +1,5 @@
 package zbtmaker.boot.mq.kafka.annotation;
 
-import org.apache.commons.lang3.BooleanUtils;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.factory.config.ConstructorArgumentValues;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
@@ -15,10 +14,10 @@ import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.util.CollectionUtils;
 import zbtmaker.boot.mq.kafka.config.KafkaCommonConfig;
+import zbtmaker.boot.mq.kafka.config.KafkaConsumerConfig;
 import zbtmaker.boot.mq.kafka.resolver.AutoKafkaBaseResolver;
 
 import java.util.List;
-import java.util.Objects;
 
 /**
  * @author zoubaitao
@@ -43,9 +42,9 @@ public class AutoKafkaRegistrar implements ImportBeanDefinitionRegistrar, Enviro
             }
         }
 
-        List<KafkaCommonConfig> consumerConfigs = AutoKafkaBaseResolver.getConsumerConfigs();
+        List<KafkaConsumerConfig> consumerConfigs = AutoKafkaBaseResolver.getConsumerConfigs();
         if (!CollectionUtils.isEmpty(consumerConfigs)) {
-            for (KafkaCommonConfig consumerConfig : consumerConfigs) {
+            for (KafkaConsumerConfig consumerConfig : consumerConfigs) {
                 registerContainerFactory(consumerConfig, registry);
             }
         }
@@ -60,17 +59,15 @@ public class AutoKafkaRegistrar implements ImportBeanDefinitionRegistrar, Enviro
         registry.registerBeanDefinition(beanName, beanDefinition);
     }
 
-    private void registerContainerFactory(KafkaCommonConfig consumerConfig, BeanDefinitionRegistry registry) {
+    private void registerContainerFactory(KafkaConsumerConfig consumerConfig, BeanDefinitionRegistry registry) {
         GenericBeanDefinition beanDefinition = new GenericBeanDefinition();
         beanDefinition.setBeanClass(ConcurrentKafkaListenerContainerFactory.class);
         MutablePropertyValues mpv = beanDefinition.getPropertyValues();
         mpv.addPropertyValue("consumerFactory", new DefaultKafkaConsumerFactory<>(consumerConfig.getProperties()));
-        Boolean batchListener = Objects.isNull(consumerConfig.getProperties().get("batch.listener"))
-                ? Boolean.FALSE
-                : Boolean.parseBoolean(consumerConfig.getProperties().get("batch.listener").toString());
-        if (BooleanUtils.isTrue(batchListener)) {
-            mpv.addPropertyValue("batchListener", Boolean.TRUE);
-        }
+
+        mpv.add("autoStartup", consumerConfig.getAutoStartup());
+        mpv.addPropertyValue("batchListener", consumerConfig.getBatchListener());
+
         String beanName = "containerFactory#" + consumerConfig.getClusterName();
         registry.registerBeanDefinition(beanName, beanDefinition);
     }
