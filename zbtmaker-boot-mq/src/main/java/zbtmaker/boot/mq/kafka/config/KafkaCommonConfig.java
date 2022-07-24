@@ -20,6 +20,4 @@ public class KafkaCommonConfig {
      * 集群名称
      */
     private String clusterName;
-
-
 }

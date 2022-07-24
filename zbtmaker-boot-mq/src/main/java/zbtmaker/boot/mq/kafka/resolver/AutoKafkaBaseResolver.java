@@ -26,6 +26,7 @@ public class AutoKafkaBaseResolver {
     private final static String KAFKA_CONSUMER_PREFIX = "kafka.consumer";
     private final static String BATCH_LISTENER = "batch.listener";
     private final static String AUTO_STARTUP = "auto.startup";
+    private final static String COMMON_CONFIG_NAME = "common.config.name";
     /**
      * 生产者配置
      */
@@ -37,8 +38,8 @@ public class AutoKafkaBaseResolver {
     private static List<KafkaConsumerConfig> CONSUMER_CONFIGS;
 
     public static void parseClusterConfigs(Environment environment) {
-        Map<String, KafkaProducerConfig> producerClusterNameMapConfig = new HashMap<>();
-        Map<String, KafkaConsumerConfig> consumerClusterNameMapConfig = new HashMap<>();
+        Map<String, KafkaCommonConfig> producerClusterNameMapConfig = new HashMap<>();
+        Map<String, KafkaCommonConfig> consumerClusterNameMapConfig = new HashMap<>();
         Map<String, KafkaCommonConfig> commonConfigMap = new HashMap<>();
         AbstractEnvironment abstractEnvironment = (AbstractEnvironment) environment;
         for (PropertySource<?> source : abstractEnvironment.getPropertySources()) {
@@ -48,83 +49,78 @@ public class AutoKafkaBaseResolver {
                     String key = entry.getKey();
                     if (key.startsWith(KAFKA_COMMON_PREFIX)) {
                         String keySuffix = key.substring(KAFKA_COMMON_PREFIX.length() + 1);
-                        parserCommonRealProp(keySuffix, entry.getValue().toString(), commonConfigMap);
+                        parseCommonRealProp(keySuffix, entry.getValue().toString(), commonConfigMap);
                     } else if (key.startsWith(KAFKA_CONSUMER_PREFIX)) {
                         String keySuffix = key.substring(KAFKA_CONSUMER_PREFIX.length() + 1);
-                        parseConsumerRealProp(keySuffix, entry.getValue().toString(), consumerClusterNameMapConfig);
+                        parseCommonRealProp(keySuffix, entry.getValue().toString(), consumerClusterNameMapConfig);
                     } else if (key.startsWith(KAFKA_PRODUCER_PREFIX)) {
                         String keySuffix = key.substring(KAFKA_PRODUCER_PREFIX.length() + 1);
-                        parseProducerRealProp(keySuffix, entry.getValue().toString(), producerClusterNameMapConfig);
+                        parseCommonRealProp(keySuffix, entry.getValue().toString(), producerClusterNameMapConfig);
                     }
                 }
             }
         }
 
-        if (MapUtils.isNotEmpty(commonConfigMap)) {
-            for (Map.Entry<String, KafkaCommonConfig> entry : commonConfigMap.entrySet()) {
-                KafkaCommonConfig kafkaCommonConfig = entry.getValue();
-                // consumer
-                copyCommonConfigToConsumer(kafkaCommonConfig, consumerClusterNameMapConfig);
-                // producer
-                copyCommonConfigToProducer(kafkaCommonConfig, producerClusterNameMapConfig);
-            }
-        }
         // 设置生产者默认序列化方式
         if (MapUtils.isNotEmpty(producerClusterNameMapConfig)) {
-            PRODUCER_CONFIGS = new ArrayList<>(producerClusterNameMapConfig.values());
-            for (KafkaCommonConfig producerConfig : PRODUCER_CONFIGS) {
+            PRODUCER_CONFIGS = new ArrayList<>(producerClusterNameMapConfig.size());
+            for (KafkaCommonConfig producerConfig : producerClusterNameMapConfig.values()) {
+                KafkaProducerConfig res = new KafkaProducerConfig();
+                res.setClusterName(producerConfig.getClusterName());
+                // 初始化公共配置
                 Map<String, Object> properties = producerConfig.getProperties();
+                addCommonConfig(properties, commonConfigMap);
+
                 if (!properties.containsKey(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG)) {
                     properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, org.apache.kafka.common.serialization.StringSerializer.class);
                 }
                 if (!properties.containsKey(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG)) {
                     properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, org.apache.kafka.common.serialization.StringSerializer.class);
                 }
+
+                res.setProperties(properties);
+                PRODUCER_CONFIGS.add(res);
             }
         }
         // 设置默认反序列化方式
         if (MapUtils.isNotEmpty(consumerClusterNameMapConfig)) {
-            CONSUMER_CONFIGS = new ArrayList<>(consumerClusterNameMapConfig.values());
-            for (KafkaCommonConfig consumerConfig : CONSUMER_CONFIGS) {
-                // 初始化key, value 反序列
+            CONSUMER_CONFIGS = new ArrayList<>(consumerClusterNameMapConfig.size());
+            for (KafkaCommonConfig consumerConfig : consumerClusterNameMapConfig.values()) {
+                KafkaConsumerConfig res = new KafkaConsumerConfig();
+                res.setClusterName(consumerConfig.getClusterName());
+                // 初始化公共配置
                 Map<String, Object> properties = consumerConfig.getProperties();
+                addCommonConfig(properties, commonConfigMap);
+                if (properties.containsKey(AUTO_STARTUP)) {
+                    res.setAutoStartup(Boolean.parseBoolean(properties.get(AUTO_STARTUP).toString()));
+                    properties.remove(AUTO_STARTUP);
+                }
+                if (properties.containsKey(BATCH_LISTENER)) {
+                    res.setBatchListener(Boolean.parseBoolean(properties.get(BATCH_LISTENER).toString()));
+                    properties.remove(BATCH_LISTENER);
+                }
                 if (!properties.containsKey(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG)) {
                     properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, org.apache.kafka.common.serialization.StringDeserializer.class);
                 }
                 if (!properties.containsKey(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG)) {
                     properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, org.apache.kafka.common.serialization.StringDeserializer.class);
                 }
+
+                res.setProperties(properties);
+                CONSUMER_CONFIGS.add(res);
             }
         }
     }
 
-    private static void copyCommonConfigToConsumer(KafkaCommonConfig commonConfig, Map<String, KafkaConsumerConfig> clusterNameMapCommonConfig) {
-        String clusterName = commonConfig.getClusterName();
-        Map<String, Object> properties = commonConfig.getProperties();
-        KafkaConsumerConfig otherConfig = clusterNameMapCommonConfig.get(clusterName);
-        if (otherConfig == null) {
-            otherConfig = new KafkaConsumerConfig();
-            otherConfig.setClusterName(clusterName);
-            otherConfig.setProperties(properties);
-        } else {
-            otherConfig.getProperties().putAll(properties);
+    private static void addCommonConfig(Map<String, Object> properties, Map<String, KafkaCommonConfig> commonConfigMap) {
+        if (properties.containsKey(COMMON_CONFIG_NAME)) {
+            String commonConfigName = properties.get(COMMON_CONFIG_NAME).toString();
+            KafkaCommonConfig commonConfig = commonConfigMap.get(commonConfigName);
+            if (commonConfig != null && MapUtils.isNotEmpty(commonConfig.getProperties())) {
+                properties.putAll(commonConfig.getProperties());
+            }
+            properties.remove(COMMON_CONFIG_NAME);
         }
-        clusterNameMapCommonConfig.put(clusterName, otherConfig);
-
-    }
-
-    private static void copyCommonConfigToProducer(KafkaCommonConfig commonConfig, Map<String, KafkaProducerConfig> clusterNameMapCommonConfig) {
-        String clusterName = commonConfig.getClusterName();
-        Map<String, Object> properties = commonConfig.getProperties();
-        KafkaProducerConfig otherConfig = clusterNameMapCommonConfig.get(clusterName);
-        if (otherConfig == null) {
-            otherConfig = new KafkaProducerConfig();
-            otherConfig.setClusterName(clusterName);
-            otherConfig.setProperties(properties);
-        } else {
-            otherConfig.getProperties().putAll(properties);
-        }
-        clusterNameMapCommonConfig.put(clusterName, otherConfig);
     }
 
     /**
@@ -141,30 +137,7 @@ public class AutoKafkaBaseResolver {
         return key.substring(0, index);
     }
 
-    private static void parseConsumerRealProp(String key, String value, Map<String, KafkaConsumerConfig> clusterNameMapConfig) {
-        String clusterName = parseCusterName(key);
-        if (StringUtils.isEmpty(clusterName)) {
-            return;
-        }
-        KafkaConsumerConfig commonConfig = clusterNameMapConfig.get(clusterName);
-        if (commonConfig == null) {
-            commonConfig = new KafkaConsumerConfig();
-            commonConfig.setClusterName(clusterName);
-            commonConfig.setProperties(new HashMap<>());
-            clusterNameMapConfig.put(clusterName, commonConfig);
-        }
-
-        String realProps = key.substring(clusterName.length() + 1);
-        if (AUTO_STARTUP.equals(realProps)) {
-            commonConfig.setAutoStartup(Boolean.parseBoolean(value));
-        } else if (BATCH_LISTENER.equals(realProps)) {
-            commonConfig.setBatchListener(Boolean.parseBoolean(value));
-        } else {
-            commonConfig.getProperties().put(realProps, value);
-        }
-    }
-
-    private static void parserCommonRealProp(String key, String value, Map<String, KafkaCommonConfig> clusterNameMapConfig) {
+    private static void parseCommonRealProp(String key, String value, Map<String, KafkaCommonConfig> clusterNameMapConfig) {
         String clusterName = parseCusterName(key);
         if (StringUtils.isEmpty(clusterName)) {
             return;
@@ -172,22 +145,6 @@ public class AutoKafkaBaseResolver {
         KafkaCommonConfig commonConfig = clusterNameMapConfig.get(clusterName);
         if (commonConfig == null) {
             commonConfig = new KafkaCommonConfig();
-            commonConfig.setClusterName(clusterName);
-            commonConfig.setProperties(new HashMap<>());
-            clusterNameMapConfig.put(clusterName, commonConfig);
-        }
-        String realProps = key.substring(clusterName.length() + 1);
-        commonConfig.getProperties().put(realProps, value);
-    }
-
-    private static void parseProducerRealProp(String key, String value, Map<String, KafkaProducerConfig> clusterNameMapConfig) {
-        String clusterName = parseCusterName(key);
-        if (StringUtils.isEmpty(clusterName)) {
-            return;
-        }
-        KafkaProducerConfig commonConfig = clusterNameMapConfig.get(clusterName);
-        if (commonConfig == null) {
-            commonConfig = new KafkaProducerConfig();
             commonConfig.setClusterName(clusterName);
             commonConfig.setProperties(new HashMap<>());
             clusterNameMapConfig.put(clusterName, commonConfig);
