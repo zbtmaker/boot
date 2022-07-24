@@ -9,6 +9,7 @@ import org.springframework.core.env.PropertySource;
 import zbtmaker.boot.common.util.MapUtils;
 import zbtmaker.boot.mq.kafka.config.KafkaCommonConfig;
 import zbtmaker.boot.mq.kafka.config.KafkaConsumerConfig;
+import zbtmaker.boot.mq.kafka.config.KafkaProducerConfig;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,7 +29,7 @@ public class AutoKafkaBaseResolver {
     /**
      * 生产者配置
      */
-    private static List<KafkaCommonConfig> PRODUCER_CONFIGS;
+    private static List<KafkaProducerConfig> PRODUCER_CONFIGS;
 
     /**
      * 消费者配置
@@ -36,7 +37,7 @@ public class AutoKafkaBaseResolver {
     private static List<KafkaConsumerConfig> CONSUMER_CONFIGS;
 
     public static void parseClusterConfigs(Environment environment) {
-        Map<String, KafkaCommonConfig> producerClusterNameMapConfig = new HashMap<>();
+        Map<String, KafkaProducerConfig> producerClusterNameMapConfig = new HashMap<>();
         Map<String, KafkaConsumerConfig> consumerClusterNameMapConfig = new HashMap<>();
         Map<String, KafkaCommonConfig> commonConfigMap = new HashMap<>();
         AbstractEnvironment abstractEnvironment = (AbstractEnvironment) environment;
@@ -53,16 +54,25 @@ public class AutoKafkaBaseResolver {
                         parseConsumerRealProp(keySuffix, entry.getValue().toString(), consumerClusterNameMapConfig);
                     } else if (key.startsWith(KAFKA_PRODUCER_PREFIX)) {
                         String keySuffix = key.substring(KAFKA_PRODUCER_PREFIX.length() + 1);
-                        parserCommonRealProp(keySuffix, entry.getValue().toString(), producerClusterNameMapConfig);
+                        parseProducerRealProp(keySuffix, entry.getValue().toString(), producerClusterNameMapConfig);
                     }
                 }
+            }
+        }
+
+        if (MapUtils.isNotEmpty(commonConfigMap)) {
+            for (Map.Entry<String, KafkaCommonConfig> entry : commonConfigMap.entrySet()) {
+                KafkaCommonConfig kafkaCommonConfig = entry.getValue();
+                // consumer
+                copyCommonConfigToConsumer(kafkaCommonConfig, consumerClusterNameMapConfig);
+                // producer
+                copyCommonConfigToProducer(kafkaCommonConfig, producerClusterNameMapConfig);
             }
         }
         // 设置生产者默认序列化方式
         if (MapUtils.isNotEmpty(producerClusterNameMapConfig)) {
             PRODUCER_CONFIGS = new ArrayList<>(producerClusterNameMapConfig.values());
             for (KafkaCommonConfig producerConfig : PRODUCER_CONFIGS) {
-                initCommonConfig(producerConfig, commonConfigMap);
                 Map<String, Object> properties = producerConfig.getProperties();
                 if (!properties.containsKey(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG)) {
                     properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, org.apache.kafka.common.serialization.StringSerializer.class);
@@ -76,9 +86,6 @@ public class AutoKafkaBaseResolver {
         if (MapUtils.isNotEmpty(consumerClusterNameMapConfig)) {
             CONSUMER_CONFIGS = new ArrayList<>(consumerClusterNameMapConfig.values());
             for (KafkaCommonConfig consumerConfig : CONSUMER_CONFIGS) {
-                // 初始化公共配置
-                initCommonConfig(consumerConfig, commonConfigMap);
-
                 // 初始化key, value 反序列
                 Map<String, Object> properties = consumerConfig.getProperties();
                 if (!properties.containsKey(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG)) {
@@ -91,18 +98,33 @@ public class AutoKafkaBaseResolver {
         }
     }
 
-    private static void initCommonConfig(KafkaCommonConfig consumerConfig, Map<String, KafkaCommonConfig> clusterNameMapCommonConfig) {
-        String clusterName = consumerConfig.getClusterName();
-        Map<String, Object> properties = consumerConfig.getProperties();
-        KafkaCommonConfig commonConfig = clusterNameMapCommonConfig.get(clusterName);
-        if (commonConfig != null && MapUtils.isNotEmpty(commonConfig.getProperties())) {
-            if (MapUtils.isEmpty(consumerConfig.getProperties())) {
-                properties = new HashMap<>();
-                consumerConfig.setProperties(properties);
-                properties.putAll(commonConfig.getProperties());
-            }
-            properties.putAll(commonConfig.getProperties());
+    private static void copyCommonConfigToConsumer(KafkaCommonConfig commonConfig, Map<String, KafkaConsumerConfig> clusterNameMapCommonConfig) {
+        String clusterName = commonConfig.getClusterName();
+        Map<String, Object> properties = commonConfig.getProperties();
+        KafkaConsumerConfig otherConfig = clusterNameMapCommonConfig.get(clusterName);
+        if (otherConfig == null) {
+            otherConfig = new KafkaConsumerConfig();
+            otherConfig.setClusterName(clusterName);
+            otherConfig.setProperties(properties);
+        } else {
+            otherConfig.getProperties().putAll(properties);
         }
+        clusterNameMapCommonConfig.put(clusterName, otherConfig);
+
+    }
+
+    private static void copyCommonConfigToProducer(KafkaCommonConfig commonConfig, Map<String, KafkaProducerConfig> clusterNameMapCommonConfig) {
+        String clusterName = commonConfig.getClusterName();
+        Map<String, Object> properties = commonConfig.getProperties();
+        KafkaProducerConfig otherConfig = clusterNameMapCommonConfig.get(clusterName);
+        if (otherConfig == null) {
+            otherConfig = new KafkaProducerConfig();
+            otherConfig.setClusterName(clusterName);
+            otherConfig.setProperties(properties);
+        } else {
+            otherConfig.getProperties().putAll(properties);
+        }
+        clusterNameMapCommonConfig.put(clusterName, otherConfig);
     }
 
     /**
@@ -132,7 +154,7 @@ public class AutoKafkaBaseResolver {
             clusterNameMapConfig.put(clusterName, commonConfig);
         }
 
-        String realProps = key.substring(clusterName.length());
+        String realProps = key.substring(clusterName.length() + 1);
         if (AUTO_STARTUP.equals(realProps)) {
             commonConfig.setAutoStartup(Boolean.parseBoolean(value));
         } else if (BATCH_LISTENER.equals(realProps)) {
@@ -154,11 +176,27 @@ public class AutoKafkaBaseResolver {
             commonConfig.setProperties(new HashMap<>());
             clusterNameMapConfig.put(clusterName, commonConfig);
         }
-        String realProps = key.substring(clusterName.length());
+        String realProps = key.substring(clusterName.length() + 1);
         commonConfig.getProperties().put(realProps, value);
     }
 
-    public static List<KafkaCommonConfig> getProducerConfigs() {
+    private static void parseProducerRealProp(String key, String value, Map<String, KafkaProducerConfig> clusterNameMapConfig) {
+        String clusterName = parseCusterName(key);
+        if (StringUtils.isEmpty(clusterName)) {
+            return;
+        }
+        KafkaProducerConfig commonConfig = clusterNameMapConfig.get(clusterName);
+        if (commonConfig == null) {
+            commonConfig = new KafkaProducerConfig();
+            commonConfig.setClusterName(clusterName);
+            commonConfig.setProperties(new HashMap<>());
+            clusterNameMapConfig.put(clusterName, commonConfig);
+        }
+        String realProps = key.substring(clusterName.length() + 1);
+        commonConfig.getProperties().put(realProps, value);
+    }
+
+    public static List<KafkaProducerConfig> getProducerConfigs() {
         return PRODUCER_CONFIGS;
     }
 

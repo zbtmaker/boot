@@ -13,8 +13,8 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.util.CollectionUtils;
-import zbtmaker.boot.mq.kafka.config.KafkaCommonConfig;
 import zbtmaker.boot.mq.kafka.config.KafkaConsumerConfig;
+import zbtmaker.boot.mq.kafka.config.KafkaProducerConfig;
 import zbtmaker.boot.mq.kafka.resolver.AutoKafkaBaseResolver;
 
 import java.util.List;
@@ -35,9 +35,9 @@ public class AutoKafkaRegistrar implements ImportBeanDefinitionRegistrar, Enviro
     @Override
     public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
         AutoKafkaBaseResolver.parseClusterConfigs(environment);
-        List<KafkaCommonConfig> producerConfigs = AutoKafkaBaseResolver.getProducerConfigs();
+        List<KafkaProducerConfig> producerConfigs = AutoKafkaBaseResolver.getProducerConfigs();
         if (!CollectionUtils.isEmpty(producerConfigs)) {
-            for (KafkaCommonConfig producerConfig : producerConfigs) {
+            for (KafkaProducerConfig producerConfig : producerConfigs) {
                 registerKafkaTemplate(producerConfig, registry);
             }
         }
@@ -50,7 +50,7 @@ public class AutoKafkaRegistrar implements ImportBeanDefinitionRegistrar, Enviro
         }
     }
 
-    private void registerKafkaTemplate(KafkaCommonConfig producerConfig, BeanDefinitionRegistry registry) {
+    private void registerKafkaTemplate(KafkaProducerConfig producerConfig, BeanDefinitionRegistry registry) {
         GenericBeanDefinition beanDefinition = new GenericBeanDefinition();
         beanDefinition.setBeanClass(KafkaTemplate.class);
         ConstructorArgumentValues cav = beanDefinition.getConstructorArgumentValues();
