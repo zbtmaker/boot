@@ -5,7 +5,7 @@
     <parent>
         <artifactId>zbtmaker-boot</artifactId>
         <groupId>com.zbtmaker</groupId>
-        <version>1.0-SNAPSHOT</version>
+        <version>${reversion}</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -17,6 +17,8 @@
         <spring-boot.version>2.7.1</spring-boot.version>
         <comms-collections.version>4.4</comms-collections.version>
         <guava.version>10.0.1</guava.version>
+        <dubbo.version>3.1.0</dubbo.version>
+        <sentinel.version>1.8.5</sentinel.version>
     </properties>
 
     <dependencyManagement>
@@ -57,6 +59,18 @@
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>${guava.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.dubbo</groupId>
+                <artifactId>dubbo</artifactId>
+                <version>${dubbo.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.alibaba.csp</groupId>
+                <artifactId>sentinel-core</artifactId>
+                <version>${sentinel.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

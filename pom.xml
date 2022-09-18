@@ -7,18 +7,19 @@
     <groupId>com.zbtmaker</groupId>
     <artifactId>zbtmaker-boot</artifactId>
     <packaging>pom</packaging>
-    <version>1.0-SNAPSHOT</version>
+    <version>${reversion}</version>
     <modules>
         <module>zbtmaker-boot-mq</module>
         <module>zbtmaker-boot-cache</module>
         <module>zbtmaker-boot-parent</module>
         <module>zbtmaker-boot-common</module>
         <module>zbtmaker-boot-thread</module>
+        <module>zbtmaker-boot-dubbo</module>
     </modules>
 
     <properties>
         <java.version>1.8</java.version>
-        <reversion>1.0-SNAPSHOT</reversion>
+        <reversion>1.1-SNAPSHOT</reversion>
     </properties>
     <build>
         <plugins>
