@@ -30,5 +30,20 @@
             <artifactId>sentinel-core</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+        </dependency>
+
+        <dependency>
+            <artifactId>zbtmaker-boot-common</artifactId>
+            <groupId>com.zbtmaker</groupId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 </project>

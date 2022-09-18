@@ -19,6 +19,8 @@
         <guava.version>10.0.1</guava.version>
         <dubbo.version>3.1.0</dubbo.version>
         <sentinel.version>1.8.5</sentinel.version>
+        <slf4j.version>1.7.30</slf4j.version>
+        <logback.version>1.2.3</logback.version>
     </properties>
 
     <dependencyManagement>
@@ -26,19 +28,19 @@
             <dependency>
                 <artifactId>zbtmaker-boot-mq</artifactId>
                 <groupId>com.zbtmaker</groupId>
-                <version>${reversion}</version>
+                <version>${zbt-boot.version}</version>
             </dependency>
 
             <dependency>
                 <artifactId>zbtmaker-boot-common</artifactId>
                 <groupId>com.zbtmaker</groupId>
-                <version>${reversion}</version>
+                <version>${zbt-boot.version}</version>
             </dependency>
 
             <dependency>
                 <artifactId>zbtmaker-boot-cache</artifactId>
                 <groupId>com.zbtmaker</groupId>
-                <version>${reversion}</version>
+                <version>${zbt-boot.version}</version>
             </dependency>
 
             <dependency>
@@ -71,6 +73,12 @@
                 <groupId>com.alibaba.csp</groupId>
                 <artifactId>sentinel-core</artifactId>
                 <version>${sentinel.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>${logback.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -2,9 +2,8 @@ package com.zbtmaker.dubbo.bo;
 
 import lombok.Builder;
 import lombok.Getter;
-
-import java.util.Arrays;
-import java.util.UUID;
+import org.apache.dubbo.config.ApplicationConfig;
+import org.apache.dubbo.config.RegistryConfig;
 
 /**
  * @author zoubaitao
@@ -68,4 +67,14 @@ public class GenericRpcReq {
      * 请求参数
      */
     private final Object[] params;
+
+    /**
+     * 应用配置
+     */
+    private final ApplicationConfig applicationConfig;
+
+    /**
+     * 注册配置
+     */
+    private final RegistryConfig registryConfig;
 }

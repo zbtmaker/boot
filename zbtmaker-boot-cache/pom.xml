@@ -39,6 +39,7 @@
         <dependency>
             <groupId>com.zbtmaker</groupId>
             <artifactId>zbtmaker-boot-common</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
     </dependencies>

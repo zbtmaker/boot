@@ -27,7 +27,8 @@ public class ReferenceConfigSupport {
             synchronized (holder) {
                 referenceConfig = holder.getValue();
                 if (referenceConfig == null) {
-                    holder.setValue(buildReferenceConfig(genericRpcReq));
+                    referenceConfig = buildReferenceConfig(genericRpcReq);
+                    holder.setValue(referenceConfig);
                 }
             }
         }
@@ -36,12 +37,15 @@ public class ReferenceConfigSupport {
 
     private static ReferenceConfig<GenericService> buildReferenceConfig(GenericRpcReq genericRpcReq) {
         ReferenceConfig<GenericService> referenceConfig = new ReferenceConfig<>();
+        referenceConfig.setApplication(genericRpcReq.getApplicationConfig());
+        referenceConfig.setRegistry(genericRpcReq.getRegistryConfig());
         referenceConfig.setInterface(genericRpcReq.getInterfaceName());
         referenceConfig.setGroup(genericRpcReq.getGroup());
         referenceConfig.setVersion(genericRpcReq.getVersion());
         referenceConfig.setRetries(genericRpcReq.getRetries());
         referenceConfig.setLoadbalance(genericRpcReq.getLoadBalance());
         referenceConfig.setTimeout(genericRpcReq.getTimeout());
+        referenceConfig.setGeneric("true");
         return referenceConfig;
     }
 }
