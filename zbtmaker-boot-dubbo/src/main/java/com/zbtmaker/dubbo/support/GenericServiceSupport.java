@@ -11,28 +11,28 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author zoubaitao
  * date 2022/09/18
  */
-public class ReferenceConfigSupport {
+public class GenericServiceSupport {
 
-    private static final Map<String, Holder<ReferenceConfig<GenericService>>> REFERENCE_CONFIG_CACHE = new ConcurrentHashMap<>();
+    private static final Map<String, Holder<GenericService>> GENERIC_SERVICE_CACHE = new ConcurrentHashMap<>();
 
-    public static ReferenceConfig<GenericService> getReferenceConfig(GenericRpcReq genericRpcReq) {
+    public static GenericService getGenericService(GenericRpcReq genericRpcReq) {
         String reqId = genericRpcReq.getReferenceConfigId();
-        Holder<ReferenceConfig<GenericService>> holder = REFERENCE_CONFIG_CACHE.get(reqId);
+        Holder<GenericService> holder = GENERIC_SERVICE_CACHE.get(reqId);
         if (holder == null) {
             holder = new Holder<>();
-            REFERENCE_CONFIG_CACHE.putIfAbsent(reqId, holder);
+            GENERIC_SERVICE_CACHE.putIfAbsent(reqId, holder);
         }
-        ReferenceConfig<GenericService> referenceConfig = holder.getValue();
-        if (referenceConfig == null) {
+        GenericService genericService = holder.getValue();
+        if (genericService == null) {
             synchronized (holder) {
-                referenceConfig = holder.getValue();
-                if (referenceConfig == null) {
-                    referenceConfig = buildReferenceConfig(genericRpcReq);
-                    holder.setValue(referenceConfig);
+                genericService = holder.getValue();
+                if (genericService == null) {
+                    holder.setValue(buildReferenceConfig(genericRpcReq).get());
+                    genericService = holder.getValue();
                 }
             }
         }
-        return referenceConfig;
+        return genericService;
     }
 
     private static ReferenceConfig<GenericService> buildReferenceConfig(GenericRpcReq genericRpcReq) {
